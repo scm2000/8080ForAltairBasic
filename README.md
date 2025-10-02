@@ -41,7 +41,7 @@ cmake ..
 
 make
 
-###Installing
+### Installing
 The bootloader that ships on a PicoCalc (as of August 2025) seems to require a .bin file for executables.. That also means you need linker files to offset the load start of the executable.  This project is all set up for that.  Just copy AltairBasic.bin from the build directory over to your PicoCalc's SD card /firmware directory.   It will then show up in the boot menu upon power up... Some have said this is no longer nescessary and that you can build without the load offset and just provide the built .uf2 file to the boot loader. If you can figure out how to do that.. enjoy!
 
 
