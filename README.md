@@ -27,6 +27,8 @@ I've included the drivers directory from that project for convenience, see its l
 
 And of course you'll need a .bin file for the actual Altair 8K BASIC itself. I created mine from an original Altair 8K BASIC cassette tape.  Once obtained you need to call the file basicload.bin
 
+If you have an Altair 8K BASIC tape, i've released in a separate repository: https://github.com/scm2000/decodeAltairTapes a python program taht will take a mono wav file of the tape and demodulate and unpack to a .bin file suitable for use here.   It probably works, with some changes, for other Altair format tapes.
+
 
 You'll need a suitable compiler to cross compile to RP2040.
 
