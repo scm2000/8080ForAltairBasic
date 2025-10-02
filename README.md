@@ -17,10 +17,35 @@ Altair 8K basic has a bug..   Upon start up, it will ask for how much memory to 
 Other than using CSAVE and CLOAD, you can store text files containing BASIC progam listings anywhere below /Altair.  Then once basic is running you can type &lt;ctrl&gt;i.  You will be prompted for the path to the basic listing, it will then source in the basic program.   This is useful if you want to create and edit a basic program on a laptop or desktop, as Altair 8K BASIC is pretty tedious when it comes to editing basic.   Also it allows you to source in BASIC programs found elsewhere into 8K BASIC.
 
 
-## Installation on a PicoCalc
-You can use whatever bootloader you like.  If you need link files to position the executable for your bootloader, I have examples for them in this repository. However, the latest bootloader no longer needs a .bin that was built with linker files, you can build a uf2 file.
+## Build and Installation on a PicoCalc
+### Prerequsites
+You need to install pico-sdk on your system and set up PICO_SDK_PATH to point to it.  The repository can be found at: https://github.com/raspberrypi/pico-sdk.git
+
+To make it easy on myself and to get up and running fast I use the drivers found in the picocalc-text-starter project found at https://github.com/BlairLeduc/picocalc-text-starter.git. 
+
+You have two choices, copy the directory "drivers" from that project into the top level of this project, or just create a symbolic link over to the top level of this project
+
+And of course you'll need a .bin file for the actual Altair 8K BASIC itself. I created mine from an original Altair 8K BASIC cassette tape.  Once obtained you need to call the file basicload.bin
+
+
+You'll need a suitable compiler to cross compile to RP2040.
+
+### Building
+Go to the top level of this project and do
+mkdir build
+cd build
+cmake ..
+make
+
+###Installing
+The bootloader that ships on a PicoCalc (as of August 2025) seems to require a .bin file for executables.. That also means you need linker files to offset the load start of the executable.  This project is all set up for that.  Just copy AltairBasic.bin from the build directory over to your PicoCalc's SD card /firmware directory.   It will then show up in the boot menu upon power up... Some have said this is no longer nescessary and that you can build without the load offset and just provide the built .uf2 file to the boot loader. If you can figure out how to do that.. enjoy!
+
+
 You need to create a directory /Altair at the root of your sd card, and the directory /Altair/tapes. Also you need to put your .bin for 8K basic at /Altair/basicload.bin
 
+Once everything is on the PicoCalc, you should be able to boot it up from the boot menu.   Basic will prompt you for memory size, terminal width, and whether you want some trig functions configured in or out (to save memory configure them out)
+
+Please note! The backspace key as we know it today did not exist on the teletypes in use at the time of writing Altair 8K BASIC, when typing a line if you want to delete the last character you need to type an underscore '_',   to delete multiple last characters you type multiple underscores.
 
 
 ----------------------
