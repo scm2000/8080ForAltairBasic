@@ -23,7 +23,7 @@ You need to install pico-sdk on your system and set up PICO_SDK_PATH to point to
 
 To make it easy on myself and to get up and running fast I use the drivers found in the picocalc-text-starter project found at https://github.com/BlairLeduc/picocalc-text-starter.git. 
 
-You have two choices, copy the directory "drivers" from that project into the top level of this project, or just create a symbolic link over to the top level of this project
+I've included the drivers directory from that project for convenience, see its license file.
 
 And of course you'll need a .bin file for the actual Altair 8K BASIC itself. I created mine from an original Altair 8K BASIC cassette tape.  Once obtained you need to call the file basicload.bin
 
