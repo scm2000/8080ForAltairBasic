@@ -1,3 +1,31 @@
+# 8080 for Altair Basic
+This code is based on the i8080 emulator, but has
+a mainline with special implementations of in/out opcodes
+to support Altair 8k basic. 
+The code is targeted to run on a PicoCalc, and you can
+use it to run any 8080 executable so long as you understand
+it will behave oddly when io is done to the Altair casset io port
+
+## Modifications
+The code that handles io to the terminal port keeps track of the last character typed, then the code that handles io to the casset tape port uses that assuming the user just typed CLOAD <letter> or CSAVE <letter> in order to channel bytes to/from a file:
+/Altair/tapes/tape_<letter>.dat
+
+Because Altair 8K basic requires upper case keywords, the sense of the <shift> key is reversed by the terminal io port handling routine.   That is, alphabetic characters default to upper case, if you press shift while typing then you will get a lower case letter.
+
+Altair 8K basic has a bug..   Upon start up, it will ask for how much memory to use.. If you type a number it will use that, but if you just hit enter it will go into it's automatic memory sizing routine, size the memory and use that.   Unfortunately at the time of writing the interpreter, it was assumed there would be at least some ROM in the sytem, and/or there would'nt be a full 64k of ram.   The sizing routine writes probe bytes to each location following basic's code itself... when it hits a location that does not read back what it wrote it assumes it hit rom or nonexsistent memory.   In our case we can have the full 64k of ram, and so basic will never find an end to memory, it will wrap around and overwrite itself to death.   To avoid that and allow almost all of the 64k of ram for use, I force the location 0xFFFF to look like rom.
+
+Other than using CSAVE and CLOAD, you can store text files containing BASIC progam listings anywhere below /Altair.  Then once basic is running you can type <ctrl>i.  You will be prompted for the path to the basic listing, it will then source in the basic program.   This is useful if you want to create and edit a basic program on a laptop or desktop, as Altair 8K BASIC is pretty tedious when it comes to editing basic.   Also it allows you to source in BASIC programs found elsewhere into 8K BASIC.
+
+
+## Installation on a PicoCalc
+You can use whatever bootloader you like.  If you need link files to position the executable for your bootloader, I have examples for them in this repository. However, the latest bootloader no longer needs a .bin that was built with linker files, you can build a uf2 file.
+You need to create a directory /Altair at the root of your sd card, and the directory /Altair/tapes. Also you need to put your .bin for 8K basic at /Altair/basicload.bin
+
+
+
+----------------------
+original i8080 readme
+----------------------
 # 8080
 
 A complete emulation of the Intel 8080 processor written in C99. Goals:
