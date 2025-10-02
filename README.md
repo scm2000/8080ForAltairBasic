@@ -32,9 +32,13 @@ You'll need a suitable compiler to cross compile to RP2040.
 
 ### Building
 Go to the top level of this project and do
+
 mkdir build
+
 cd build
+
 cmake ..
+
 make
 
 ###Installing
