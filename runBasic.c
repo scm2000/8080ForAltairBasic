@@ -49,7 +49,7 @@ static bool sourceInProgress = false;
 static fat32_file_t sFile;
 
 static uint8_t port_in(void* userdata, uint8_t port) {
-  if (port == 0x01)
+  if (port == 0x01 || port == 0x11)
   {
 
     // but is sourcing in progress?
@@ -134,6 +134,18 @@ static uint8_t port_in(void* userdata, uint8_t port) {
       return 0x01;
     }
   }
+  else if (port == 0x10)
+  {
+    if (keyIsReady||sourceInProgress)
+    {
+      return 0x7f;
+    }
+    else
+    {
+      return 0xff;
+    }
+
+  }
   else if (port == 6)
   {
     return 0x00; // tape always ready to read/write a char
@@ -175,7 +187,7 @@ static uint8_t port_in(void* userdata, uint8_t port) {
 
   // uncomment the following if you are curious about
   // other ports that are accessed
-  //printf("IN from port %02x\n",port);
+  printf("IN from port %02x\n",port);
   return 0x00;
 }
 
@@ -184,7 +196,7 @@ static char last0=0xff, last1=0xff, last2=0xff;
 static void port_out(void* userdata, uint8_t port, uint8_t value) {
   i8080* const c = (i8080*) userdata;
 
-  if (port == 0x18 || port == 0x01)
+  if (port == 0x18 || port == 0x01 || port == 0x11)
   {
     putchar(c->a & 0x7f);
     return;
@@ -236,11 +248,11 @@ static void port_out(void* userdata, uint8_t port, uint8_t value) {
 
   // uncomment the following for info about 
   // outs to ports
-  //printf("Out to port: %02x = %02x\n", port, value);
+  printf("Out to port: %02x = %02x\n", port, value);
 }
 
 static inline int load_file(const char* filename, uint16_t addr) {
-  //printf("Loading %s\n", filename);
+  printf("Loading %s\n", filename);
   fat32_file_t f;
   if (fat32_open(&f, filename) != FAT32_OK){
     fprintf(stderr, "error: can't open file '%s'.\n", filename);
@@ -248,12 +260,12 @@ static inline int load_file(const char* filename, uint16_t addr) {
   }
   else
   {
-    //fprintf(stderr, "File opened\n");
+    fprintf(stderr, "File opened\n");
   }
 
   // file size check:
   uint32_t file_size = fat32_size(&f);
-  //printf("File size is %ld bytes.\n", file_size);
+  printf("File size is %ld bytes.\n", file_size);
 
   if (file_size + addr >= MEMORY_SIZE) {
     fprintf(stderr, "error: file %s can't fit in memory.\n", filename);
@@ -261,7 +273,7 @@ static inline int load_file(const char* filename, uint16_t addr) {
   }
   else
   {
-    //fprintf(stderr, "file fits in memory\n");
+    fprintf(stderr, "file fits in memory\n");
   }
 
   // copying the bytes in memory:
@@ -275,7 +287,7 @@ static inline int load_file(const char* filename, uint16_t addr) {
   }
   else
   {
-    //fprintf(stderr, "File read in ok\n");
+    fprintf(stderr, "File read in ok\n");
   }
 
   fat32_close(&f);
@@ -302,7 +314,7 @@ static inline void run_test(
   }
 
   c->pc = 0x00;
-
+  keyIsReady = false;
   while (1) {
     i8080_step(c);
   }
@@ -324,7 +336,7 @@ int main(void) {
   }
 
   i8080 cpu;
-  run_test(&cpu, "/Altair/basicLoad.bin", 0);
+  run_test(&cpu, "/Altair/basicload.bin", 0);
 
   free(memory);
 
