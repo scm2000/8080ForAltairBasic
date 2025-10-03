@@ -16,7 +16,8 @@ So typically when you want to add a new program to the tape, you'd hit ctrl-e, t
 Note: Altair BASIC will read forever looking for a given program to load, aparently you are expected to hit the Altair reset button when it's hung looking for a program that is either not on the tape, or positioned earlier in the tape.  For convenience, if BASIC ever attempts to read past the end of the tape file, the emulator will force a hard reset in software.
 
 A note about versions of basic.   In version 3.2 of BASIC the commands to read and write the tape are CLOAD /singleLetterFileName/ and CSAVE /singleLetterFileName/, however in version 4.0 of BASIC the commands are CLOAD "--any string file name--" and CSAVE "-- any string file name--".
-Luckilly if you are using Version 4.0 and have written programs to the tape file with long file names, and you switch to running version 3.2, you can still load those programs -- BASIC will match the first letter in the file name on the tape.
+Luckilly if you are using Version 4.0 and have written programs to the tape file with long file names, and you switch to running version 3.2, you can still load those programs -- BASIC will match the first letter in the file name on the tape. This is because, even though V4.0 allows you to specify a string for the file name, it only uses the first character of the string when saving and loading the file.  Note, the file name character is case sensitive.  Also note V4.0's CSAVE*/CLOAD* of array variables also works as expected.
+
 
 
 Because Altair 8K basic requires upper case keywords, the sense of the &lt;shift&gt; key is reversed by the terminal io port handling routine.   That is, alphabetic characters default to upper case, if you press shift while typing then you will get a lower case letter.
