@@ -19,6 +19,9 @@
 #include <sys/time.h>
 #include <fcntl.h>
 
+fat32_file_t fullTapeFP;
+const char *fullTapePath = "/Altair/tapes/fulltape.dat";
+
 volatile bool keyIsReady = false;
 
 void keyReadyCallback()
@@ -41,13 +44,9 @@ static void wb(void* userdata, uint16_t addr, uint8_t val) {
   memory[addr] = val;
 }
 
-static char lastAlphaTyped;
-bool tapeInProgress = false;
-static fat32_file_t tapeF;
-static int tapeNullCountdown = 3;
+static bool resetRequested = false;
 static bool sourceInProgress = false;
 static fat32_file_t sFile;
-
 static uint8_t port_in(void* userdata, uint8_t port) {
   if (port == 0x01 || port == 0x11)
   {
@@ -75,7 +74,7 @@ static uint8_t port_in(void* userdata, uint8_t port) {
       fflush(stdout);
       return 0x00;
     }
-    
+
     // it wants character input
     keyIsReady = false;
     char chr = getchar();
@@ -107,19 +106,31 @@ static uint8_t port_in(void* userdata, uint8_t port) {
       fat32_read(&sFile, &chr, 1, &bytes_read);
       return chr;
     }
+    else if (chr == 18)
+    {
+      // ctrl r means rewind full tape file
+      fat32_seek(&fullTapeFP,0);
+      printf("Tape rewound\n");
+      return 0;
+    }
+    else if (chr == 5)
+    {
+      // ctrl e means skipt to end of full tape file
+      fat32_seek(&fullTapeFP, fat32_size(&fullTapeFP));
+      printf("Moved to end of tape.\n");
+      return 0;
+    }
 
 
     // invert the sense of the shift key for alphas 
     // basic keywords are all caps...
     if (chr >= 'A' && chr <= 'Z')
     {
-      lastAlphaTyped = chr; //save the upper case version
       chr = tolower(chr);
     }
     else if (chr >= 'a' && chr <= 'z')
     {
       chr = toupper(chr);
-      lastAlphaTyped = chr; // save the upper case version
     }
     return chr;
   }
@@ -148,27 +159,13 @@ static uint8_t port_in(void* userdata, uint8_t port) {
   }
   else if (port == 6)
   {
-    return 0x00; // tape always ready to read/write a char
+    return 0x00; // tape always ready 
   }
   else if (port == 7)
   {
-    if (!tapeInProgress)
-    {
-      // open a tape file
-      char path[25];
-      sprintf(path, "/Altair/tapes/tape_%c.dat", lastAlphaTyped);
-      fat32_error_t status = 
-        fat32_open(&tapeF, path);
-      if (status != FAT32_OK)
-      {
-        fprintf(stderr, "Error: %d, There is a problem opening %s for read\n",status,path);
-      }
-      else
-        tapeInProgress = true;     
-    }
     char tchar;
     size_t bytes_read;
-    if (fat32_read(&tapeF, &tchar, 1, &bytes_read) != FAT32_OK)
+    if (fat32_read(&fullTapeFP, &tchar, 1, &bytes_read) != FAT32_OK)
     {
       fprintf(stderr, "Error reading bytes from tape file\n");
       return 0;
@@ -180,7 +177,8 @@ static uint8_t port_in(void* userdata, uint8_t port) {
     }
     else 
     {
-      tapeInProgress = false;
+      printf("BASIC tried to read beyond end of tape, attempting forced reset \n");
+      resetRequested = true;
       return 0;
     }
   }
@@ -190,8 +188,6 @@ static uint8_t port_in(void* userdata, uint8_t port) {
   printf("IN from port %02x\n",port);
   return 0x00;
 }
-
-static char last0=0xff, last1=0xff, last2=0xff;
 
 static void port_out(void* userdata, uint8_t port, uint8_t value) {
   i8080* const c = (i8080*) userdata;
@@ -203,27 +199,9 @@ static void port_out(void* userdata, uint8_t port, uint8_t value) {
   }
   else if (port == 7)
   {
-    if (!tapeInProgress)
-    {
-      // open a tape file
-      char path[25];
-      sprintf(path, "/Altair/tapes/tape_%c.dat", lastAlphaTyped);
-      fat32_delete(path);// in case it's been written before
-      fat32_error_t status = fat32_create(&tapeF, path);
-      if (status != FAT32_OK)
-      {
-        fprintf(stderr, "Error: %d There is a problem opening %s for write\n",status, path);
-      }
-      else
-      {
-        tapeInProgress = true;
-        tapeNullCountdown = 3;
-      }     
-    }
-
-    // just write the char  to the file
+    // just write the char  to the file at cur position
     size_t bytes_written;
-    if (fat32_write(&tapeF, &c->a, 1, &bytes_written) != FAT32_OK)
+    if (fat32_write(&fullTapeFP, &c->a, 1, &bytes_written) != FAT32_OK)
     {
       fprintf(stderr, "Error writing byte to tape file.\n");
     }
@@ -231,23 +209,11 @@ static void port_out(void* userdata, uint8_t port, uint8_t value) {
     {
       fprintf(stderr, "Error writing byte to tape, bytes read = %d rather than the expected 1\n", bytes_written);
     }
-
-    //look for the pattern: 0x00,0x00,0x00 that indicates
-    //the end of writing.
-    last0 = last1;
-    last1 = last2;
-    last2 = c->a;
-    if (last0==0 && last1==0 && last2==0)
-    {
-      fat32_close(&tapeF);
-      printf("Wrote tape file.\n");
-      tapeInProgress = false;
-    }
-    
+    return;
   }
 
   // uncomment the following for info about 
-  // outs to ports
+  // outs to unknown ports
   printf("Out to port: %02x = %02x\n", port, value);
 }
 
@@ -316,6 +282,11 @@ static inline void run_test(
   c->pc = 0x00;
   keyIsReady = false;
   while (1) {
+    if (resetRequested)
+    {
+      c->pc = 0x00;
+      resetRequested = false;
+    }
     i8080_step(c);
   }
 
@@ -334,6 +305,11 @@ int main(void) {
   if (memory == NULL) {
     return 1;
   }
+
+  // create a emulated tape file if not already there
+  fat32_error_t status = fat32_open(&fullTapeFP, fullTapePath);
+  if (status != FAT32_OK)
+    fat32_create(&fullTapeFP, fullTapePath);
 
   i8080 cpu;
   run_test(&cpu, "/Altair/basicload.bin", 0);

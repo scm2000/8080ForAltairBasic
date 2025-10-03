@@ -7,8 +7,17 @@ use it to run any 8080 executable so long as you understand
 it will behave oddly when io is done to the Altair casset io port
 
 ## Modifications
-The code that handles io to the terminal port keeps track of the last character typed, then the code that handles io to the casset tape port uses that assuming the user just typed CLOAD &lt;letter&gt; or CSAVE &lt;letter&gt; in order to channel bytes to/from a file:
-/Altair/tapes/tape_&lt;letter&gt;.dat
+I've revamped cassette tape emulation.   Now a single tape file is kept called
+/Altair/tapes/fullTape.dat
+
+All programs saved go into this single tape file
+I've added a command ctrl-r, to rewind the tape file to the begining and ctrl-e to move the tape head to the end of the tape file.   This more closely resembles an actual cassette tape.
+So typically when you want to add a new program to the tape, you'd hit ctrl-e, then do your csave.   To let basic search for a program to load, you'd hit ctrl-r and do your cload.  Note, if you happen to know your tape is positioned before the program you want to load you don't need to do the ctrl-r.  
+Note: Altair BASIC will read forever looking for a given program to load, aparently you are expected to hit the Altair reset button when it's hung looking for a program that is either not on the tape, or positioned earlier in the tape.  For convenience, if BASIC ever attempts to read past the end of the tape file, the emulator will force a hard reset in software.
+
+A note about versions of basic.   In version 3.2 of BASIC the commands to read and write the tape are CLOAD /singleLetterFileName/ and CSAVE /singleLetterFileName/, however in version 4.0 of BASIC the commands are CLOAD "--any string file name--" and CSAVE "-- any string file name--".
+Luckilly if you are using Version 4.0 and have written programs to the tape file with long file names, and you switch to running version 3.2, you can still load those programs -- BASIC will match the first letter in the file name on the tape.
+
 
 Because Altair 8K basic requires upper case keywords, the sense of the &lt;shift&gt; key is reversed by the terminal io port handling routine.   That is, alphabetic characters default to upper case, if you press shift while typing then you will get a lower case letter.
 
