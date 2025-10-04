@@ -22,13 +22,6 @@
 fat32_file_t fullTapeFP;
 const char *fullTapePath = "/Altair/tapes/fulltape.dat";
 
-volatile bool keyIsReady = false;
-
-void keyReadyCallback()
-{
-  keyIsReady = true;
-}
-
 // memory callbacks
 #define MEMORY_SIZE 0x10000
 static uint8_t* memory = NULL;
@@ -64,19 +57,17 @@ static uint8_t port_in(void* userdata, uint8_t port) {
         fat32_close(&sFile);
         printf("\nDone sourcing\n");
       }
-      keyIsReady = false;
       return sChr;
     }
 
-    if (!keyIsReady)
+    if (!keyboard_key_available())
     {
       //printf("read while not ready port 1\n");
-      fflush(stdout);
+      //fflush(stdout);
       return 0x00;
     }
 
     // it wants character input
-    keyIsReady = false;
     char chr = getchar();
     if (chr == 0x0a)
     {
@@ -123,8 +114,6 @@ static uint8_t port_in(void* userdata, uint8_t port) {
     else if (chr == 6)
     {
       resetRequested = true; // force a reset on ctrl-f
-      keyIsReady = false;
-      fflush(stdin);
       return 0;
     }
 
@@ -143,7 +132,7 @@ static uint8_t port_in(void* userdata, uint8_t port) {
   }
   else if (port == 0)
   {
-    if (keyIsReady||sourceInProgress)
+    if (keyboard_key_available()||sourceInProgress)
     {
       return 0x00;
     }
@@ -154,7 +143,7 @@ static uint8_t port_in(void* userdata, uint8_t port) {
   }
   else if (port == 0x10)
   {
-    if (keyIsReady||sourceInProgress)
+    if (keyboard_key_available()||sourceInProgress)
     {
       return 0x7f;
     }
@@ -287,7 +276,6 @@ static inline void run_test(
   }
 
   c->pc = 0x00;
-  keyIsReady = false;
   while (1) {
     if (resetRequested)
     {
@@ -306,7 +294,7 @@ int main(void) {
 
     stdio_init_all();
     picocalc_init(NULL);
-    keyboard_init(keyReadyCallback);
+    keyboard_init(0);
 
   memory = malloc(MEMORY_SIZE);
   if (memory == NULL) {
