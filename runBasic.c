@@ -120,6 +120,13 @@ static uint8_t port_in(void* userdata, uint8_t port) {
       printf("Moved to end of tape.\n");
       return 0;
     }
+    else if (chr == 6)
+    {
+      resetRequested = true; // force a reset on ctrl-f
+      keyIsReady = false;
+      fflush(stdin);
+      return 0;
+    }
 
 
     // invert the sense of the shift key for alphas 
@@ -185,7 +192,7 @@ static uint8_t port_in(void* userdata, uint8_t port) {
 
   // uncomment the following if you are curious about
   // other ports that are accessed
-  printf("IN from port %02x\n",port);
+  //printf("IN from port %02x\n",port);
   return 0x00;
 }
 
@@ -214,11 +221,11 @@ static void port_out(void* userdata, uint8_t port, uint8_t value) {
 
   // uncomment the following for info about 
   // outs to unknown ports
-  printf("Out to port: %02x = %02x\n", port, value);
+  //printf("Out to port: %02x = %02x\n", port, value);
 }
 
 static inline int load_file(const char* filename, uint16_t addr) {
-  printf("Loading %s\n", filename);
+  //printf("Loading %s\n", filename);
   fat32_file_t f;
   if (fat32_open(&f, filename) != FAT32_OK){
     fprintf(stderr, "error: can't open file '%s'.\n", filename);
@@ -226,12 +233,12 @@ static inline int load_file(const char* filename, uint16_t addr) {
   }
   else
   {
-    fprintf(stderr, "File opened\n");
+    //fprintf(stderr, "File opened\n");
   }
 
   // file size check:
   uint32_t file_size = fat32_size(&f);
-  printf("File size is %ld bytes.\n", file_size);
+  //printf("File size is %ld bytes.\n", file_size);
 
   if (file_size + addr >= MEMORY_SIZE) {
     fprintf(stderr, "error: file %s can't fit in memory.\n", filename);
@@ -239,7 +246,7 @@ static inline int load_file(const char* filename, uint16_t addr) {
   }
   else
   {
-    fprintf(stderr, "file fits in memory\n");
+    //fprintf(stderr, "file fits in memory\n");
   }
 
   // copying the bytes in memory:
@@ -253,7 +260,7 @@ static inline int load_file(const char* filename, uint16_t addr) {
   }
   else
   {
-    fprintf(stderr, "File read in ok\n");
+    //fprintf(stderr, "File read in ok\n");
   }
 
   fat32_close(&f);
